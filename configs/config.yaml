@@ -1,11 +1,32 @@
 devices: 1
 epochs: 1000
+download: True
 data_dir:
 
 data:
-    batch_size: 128
-    num_workers: 8 
-    data_dir: ${data_dir}
+    train:
+        dataset:
+            root: ${data_dir}
+            train: True
+            download: ${download}
+        dataloader:
+            batch_size: 128
+            num_workers: 8
+            drop_last: True
+            pin_memory: True
+            shuffle: True
+            
+    val:
+        dataset:
+            root: ${data_dir}
+            train: False
+            download: False
+        dataloader:
+            batch_size: 128
+            num_workers: 8
+            drop_last: False
+            pin_memory: True
+            shuffle: False
         
         
 model:
