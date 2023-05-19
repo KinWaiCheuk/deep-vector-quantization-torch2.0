@@ -1,0 +1,64 @@
+devices: 1
+epochs: 500
+download: True
+data_dir:
+
+data:
+    train:
+        dataset:
+            root: ${data_dir}
+            train: True
+            download: ${download}
+        dataloader:
+            batch_size: 128
+            num_workers: 8
+            drop_last: True
+            pin_memory: True
+            shuffle: True
+            
+    val:
+        dataset:
+            root: ${data_dir}
+            train: False
+            download: False
+        dataloader:
+            batch_size: 128
+            num_workers: 8
+            drop_last: False
+            pin_memory: True
+            shuffle: False
+        
+        
+model:
+    name: 'SimpleVQVAE'
+    args:
+        encoder:
+            input_dim: 3
+            hidden_dim: 128
+            output_dim: ${model.args.encoder.hidden_dim}
+        codebook:
+            n_embeddings: 768
+            embedding_dim: ${model.args.encoder.hidden_dim}
+        decoder:
+            input_dim: ${model.args.encoder.hidden_dim}
+            hidden_dim: ${model.args.encoder.hidden_dim}
+            output_dim: 3
+        
+        
+task:
+    lr: 2e-4
+    checkpoint:
+        monitor: "Val/total_loss"
+        filename: "{epoch:02d}"
+        save_top_k: 2
+        mode: "min"
+        auto_insert_metric_name: False
+        save_last: True
+    
+    
+    
+
+trainer:
+    devices: ${devices}
+    max_epochs: ${epochs}
+    check_val_every_n_epoch: 1
