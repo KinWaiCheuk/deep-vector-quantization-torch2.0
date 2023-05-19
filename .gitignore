@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 .github
 data
+outputs
 
 # C extensions
 *.so

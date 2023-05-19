@@ -1,10 +1,6 @@
-user_config: # path to config file to update
-
 devices: 1
 epochs: 1000
-sr: 16000
-data_dir: '/home/kinwai/cifar-10-batches-py'
-model_name: 'Conv128Diff'
+data_dir:
 
 data:
     batch_size: 128
