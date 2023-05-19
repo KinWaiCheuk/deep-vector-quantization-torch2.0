@@ -15,11 +15,12 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 from data.cifar10 import CIFAR10Data
-from model.deepmind_enc_dec import DeepMindEncoder, DeepMindDecoder
-from model.openai_enc_dec import OpenAIEncoder, OpenAIDecoder
-from model.openai_enc_dec import Conv2d as PatchedConv2d
-from model.quantize import VQVAEQuantize, GumbelQuantize
-from model.loss import Normal, LogitLaplace
+from models.deepmind_enc_dec import DeepMindEncoder, DeepMindDecoder
+from models.openai_enc_dec import OpenAIEncoder, OpenAIDecoder
+from models.openai_enc_dec import Conv2d as PatchedConv2d
+from models.quantize import VQVAEQuantize, GumbelQuantize
+from models.loss import Normal, LogitLaplace
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 # -----------------------------------------------------------------------------
 
@@ -64,6 +65,13 @@ class VQVAE(pl.LightningModule):
         x_hat, latent_loss, ind = self.forward(x)
         recon_loss = self.recon_loss.nll(x, x_hat)
         loss = recon_loss + latent_loss
+        
+        self.log('recon_loss', recon_loss, prog_bar=True)
+        self.log('latent_loss', latent_loss, prog_bar=True)
+        
+        sch = self.lr_schedulers()
+        sch.step()
+    
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -116,22 +124,10 @@ class VQVAE(pl.LightningModule):
             {"params": [param_dict[pn] for pn in sorted(list(no_decay))], "weight_decay": 0.0},
         ]
         optimizer = torch.optim.AdamW(optim_groups, lr=3e-4, betas=(0.9, 0.999), eps=1e-08, weight_decay=1e-4)
-        self.optimizer = optimizer
+        scheduler = CosineAnnealingLR(optimizer, 1200000, eta_min=1.25e-6, last_epoch=- 1, verbose=False)
 
-        return optimizer
+        return [optimizer], [{"scheduler": scheduler, "interval": "epoch"}]
 
-    @staticmethod
-    def add_model_specific_args(parent_parser):
-        parser = ArgumentParser(parents=[parent_parser], add_help=False)
-        # model type
-        parser.add_argument("--vq_flavor", type=str, default='vqvae', choices=['vqvae', 'gumbel'])
-        parser.add_argument("--enc_dec_flavor", type=str, default='deepmind', choices=['deepmind', 'openai'])
-        parser.add_argument("--loss_flavor", type=str, default='l2', choices=['l2', 'logit_laplace'])
-        # model size
-        parser.add_argument("--num_embeddings", type=int, default=512, help="vocabulary size; number of possible discrete states")
-        parser.add_argument("--embedding_dim", type=int, default=64, help="size of the vector of the embedding of each discrete token")
-        parser.add_argument("--n_hid", type=int, default=64, help="number of channels controlling the size of the model")
-        return parser
 
 # -----------------------------------------------------------------------------
 def cos_anneal(e0, e1, t0, t1, e):
@@ -165,37 +161,3 @@ class DecayLR(pl.Callback):
         t = cos_anneal(0, 1200000, 3e-4, 1.25e-6, trainer.global_step)
         for g in pl_module.optimizer.param_groups:
             g['lr'] = t
-
-def cli_main():
-    pl.seed_everything(1337)
-
-    # -------------------------------------------------------------------------
-    # arguments...
-    parser = ArgumentParser()
-    # training related
-    parser = pl.Trainer.add_argparse_args(parser)
-    # model related
-    parser = VQVAE.add_model_specific_args(parser)
-    # dataloader related
-    parser.add_argument("--data_dir", type=str, default='/apcv/users/akarpathy/cifar10')
-    parser.add_argument("--batch_size", type=int, default=128)
-    parser.add_argument("--num_workers", type=int, default=8)
-    # done!
-    args = parser.parse_args()
-    # -------------------------------------------------------------------------
-
-    data = CIFAR10Data(args)
-    model = VQVAE(args)
-
-    # annealing schedules for lots of constants
-    callbacks = []
-    callbacks.append(ModelCheckpoint(monitor='val_recon_loss', mode='min'))
-    callbacks.append(DecayLR())
-    if args.vq_flavor == 'gumbel':
-       callbacks.extend([DecayTemperature(), RampBeta()])
-    trainer = pl.Trainer.from_argparse_args(args, callbacks=callbacks, max_steps=3000000)
-
-    trainer.fit(model, data)
-
-if __name__ == "__main__":
-    cli_main()

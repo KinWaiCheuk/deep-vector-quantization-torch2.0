@@ -1,0 +1,28 @@
+user_config: # path to config file to update
+
+devices: 1
+epochs: 1000
+sr: 16000
+data_dir: '/home/kinwai/cifar-10-batches-py'
+model_name: 'Conv128Diff'
+
+data:
+    batch_size: 128
+    num_workers: 8 
+    data_dir: ${data_dir}
+        
+        
+model:
+    args:
+        vq_flavor: 'vqvae' # 'vqvae' or 'gumbel'
+        enc_dec_flavor: 'deepmind' # 'deepmind' or 'openai'
+        loss_flavor: 'l2' # 'l2' or 'logit_laplace'
+        num_embeddings: 512
+        embedding_dim: 64
+        n_hid: 64
+    
+
+trainer:
+    devices: ${devices}
+    max_epochs: ${epochs}
+    check_val_every_n_epoch: 1
