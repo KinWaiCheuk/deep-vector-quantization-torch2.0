@@ -68,9 +68,6 @@ class VQVAE(pl.LightningModule):
         
         self.log('recon_loss', recon_loss, prog_bar=True)
         self.log('latent_loss', latent_loss, prog_bar=True)
-        
-        sch = self.lr_schedulers()
-        sch.step()
     
         return loss
 
@@ -124,9 +121,9 @@ class VQVAE(pl.LightningModule):
             {"params": [param_dict[pn] for pn in sorted(list(no_decay))], "weight_decay": 0.0},
         ]
         optimizer = torch.optim.AdamW(optim_groups, lr=3e-4, betas=(0.9, 0.999), eps=1e-08, weight_decay=1e-4)
-        scheduler = CosineAnnealingLR(optimizer, 1200000, eta_min=1.25e-6, last_epoch=- 1, verbose=False)
+        self.optimizer = optimizer
 
-        return [optimizer], [{"scheduler": scheduler, "interval": "epoch"}]
+        return [optimizer], []
 
 
 # -----------------------------------------------------------------------------

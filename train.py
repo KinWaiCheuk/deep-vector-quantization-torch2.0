@@ -8,31 +8,39 @@ from hydra.utils import to_absolute_path
 from data.cifar10 import CIFAR10Data
 
 import os
+import math
 
 """
 These ramps/decays follow DALL-E Appendix A.2 Training https://arxiv.org/abs/2102.12092
 """
+def cos_anneal(e0, e1, t0, t1, e):
+    """ ramp from (e0, t0) -> (e1, t1) through a cosine schedule based on e \in [e0, e1] """
+    alpha = max(0, min(1, (e - e0) / (e1 - e0))) # what fraction of the way through are we
+    alpha = 1.0 - math.cos(alpha * math.pi/2) # warp through cosine
+    t = alpha * t1 + (1 - alpha) * t0 # interpolate accordingly
+    return t
+
 class DecayTemperature(pl.Callback):
-    def on_train_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx):
+    def on_train_batch_start(self, trainer, pl_module, batch, batch_idx):
         # The relaxation temperature τ is annealed from 1 to 1/16 over the first 150,000 updates.
         t = cos_anneal(0, 150000, 1.0, 1.0/16, trainer.global_step)
         pl_module.quantizer.temperature = t
 
 class RampBeta(pl.Callback):
-    def on_train_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx):
+    def on_train_batch_start(self, trainer, pl_module, batch, batch_idx):
         # The KL weight β is increased from 0 to 6.6 over the first 5000 updates
         # "We divide the overall loss by 256 × 256 × 3, so that the weight of the KL term
         # becomes β/192, where β is the KL weight."
         # TODO: OpenAI uses 6.6/192 but kinda tricky to do the conversion here... about 5e-4 works for this repo so far... :\
         t = cos_anneal(0, 5000, 0.0, 5e-4, trainer.global_step)
         pl_module.quantizer.kld_scale = t
-
+        
 class DecayLR(pl.Callback):
-    def on_train_batch_start(self, trainer, pl_module, batch, batch_idx, dataloader_idx):
+    def on_train_batch_start(self, trainer, pl_module, batch, batch_idx):
         # The step size is annealed from 1e10−4 to 1.25e10−6 over 1,200,000 updates. I use 3e-4
         t = cos_anneal(0, 1200000, 3e-4, 1.25e-6, trainer.global_step)
         for g in pl_module.optimizer.param_groups:
-            g['lr'] = t
+            g['lr'] = t        
 
 
 @hydra.main(config_path="configs", config_name="config")
@@ -49,6 +57,7 @@ def main(cfg):
                                       mode="min",
                                       auto_insert_metric_name=False,
                                       save_last=True))
+    callbacks.append(DecayLR())
     if cfg.model.args.vq_flavor == 'gumbel':
         callbacks.extend([DecayTemperature(), RampBeta()])  
     name = f"exp"
