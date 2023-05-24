@@ -14,7 +14,6 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import ModelCheckpoint
 
-from data.cifar10 import CIFAR10Data
 from models.deepmind_enc_dec import DeepMindEncoder, DeepMindDecoder
 from models.openai_enc_dec import OpenAIEncoder, OpenAIDecoder
 from models.openai_enc_dec import Conv2d as PatchedConv2d

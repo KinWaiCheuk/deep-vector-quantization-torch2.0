@@ -6,18 +6,18 @@ import models as Model
 import hydra
 from hydra.utils import to_absolute_path
 import os
-from data.cifar10 import CIFAR10Data
-
+import data as Dataset
 
 @hydra.main(config_path="configs", config_name="simple")
 def main(cfg):
     cfg.data_dir = to_absolute_path(cfg.data_dir)
-    data = CIFAR10Data(**cfg.data)
+    data = getattr(Dataset, cfg.dataset.name)(**cfg.dataset.args)
 
     model = getattr(Model, cfg.model.name)(cfg.model.args, cfg.task)
     callbacks = []
     callbacks.append(ModelCheckpoint(**cfg.task.checkpoint))
-    name = f"exp"
+    name = f"{cfg.dataset.name}-{cfg.model.name}"
+    print(f'{cfg.dataset.args}')
     logger = TensorBoardLogger(save_dir=".", version=1, name=name)      
     trainer = pl.Trainer(**cfg.trainer,
                          callbacks=callbacks,

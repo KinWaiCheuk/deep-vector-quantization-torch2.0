@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 
 import pytorch_lightning as pl
 
-class CIFAR10Data(pl.LightningDataModule):
+class cifar10(pl.LightningDataModule):
     """ returns cifar-10 examples in floats in range [0,1] """
 
     def __init__(self, **kwargs):
@@ -32,6 +32,7 @@ class CIFAR10Data(pl.LightningDataModule):
             ]
         )
         dataset = CIFAR10(**self.hparams.val.dataset, transform=transform)
+        print(f'Val ------------- {len(dataset)=}')
         dataloader = DataLoader(dataset,**self.hparams.val.dataloader)
         return dataloader
 
