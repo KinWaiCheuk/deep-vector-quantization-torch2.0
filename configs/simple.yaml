@@ -10,7 +10,7 @@ model:
     name: 'SimpleVQVAE'
     args:
         encoder:
-            input_dim: 3
+            input_dim: 3 
             hidden_dim: 128
             output_dim: ${model.args.encoder.hidden_dim}
         codebook:

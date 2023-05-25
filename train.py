@@ -17,7 +17,6 @@ def main(cfg):
     callbacks = []
     callbacks.append(ModelCheckpoint(**cfg.task.checkpoint))
     name = f"{cfg.dataset.name}-{cfg.model.name}"
-    print(f'{cfg.dataset.args}')
     logger = TensorBoardLogger(save_dir=".", version=1, name=name)      
     trainer = pl.Trainer(**cfg.trainer,
                          callbacks=callbacks,
