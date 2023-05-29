@@ -1,6 +1,7 @@
 devices: 1
 epochs: 500
 download: True
+img_channels: 3
 data_dir:
 
 defaults:    
@@ -10,7 +11,7 @@ model:
     name: 'SimpleVQVAE'
     args:
         encoder:
-            input_dim: 3 
+            input_dim: ${img_channels} 
             hidden_dim: 128
             output_dim: ${model.args.encoder.hidden_dim}
         codebook:
@@ -19,7 +20,7 @@ model:
         decoder:
             input_dim: ${model.args.encoder.hidden_dim}
             hidden_dim: ${model.args.encoder.hidden_dim}
-            output_dim: 3
+            output_dim: ${img_channels}
         
         
 task:
