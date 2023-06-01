@@ -16,7 +16,7 @@ def main(cfg):
     model = getattr(Model, cfg.model.name)(cfg.model.args, cfg.task)
     callbacks = []
     callbacks.append(ModelCheckpoint(**cfg.task.checkpoint))
-    name = f"{cfg.dataset.name}-{cfg.model.name}"
+    name = f"CorrectVQshape{cfg.dataset.name}-{cfg.model.name}"
     logger = TensorBoardLogger(save_dir=".", version=1, name=name)      
     trainer = pl.Trainer(**cfg.trainer,
                          callbacks=callbacks,

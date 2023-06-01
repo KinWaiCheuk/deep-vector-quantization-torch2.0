@@ -47,8 +47,10 @@ class VQEmbeddingEMA(nn.Module):
         self.register_buffer("ema_weight", self.embedding.clone())
 
     def encode(self, x):
+        # x: (B, C, H, W)
         M, D = self.embedding.size()
-        x_flat = x.detach().reshape(-1, D)
+        # x_flat = x.detach().reshape(-1, D)
+        x_flat = x.detach().permute(0,2,3,1).flatten(0,-2)
 
         distances = torch.addmm(torch.sum(self.embedding ** 2, dim=1) +
                     torch.sum(x_flat ** 2, dim=1, keepdim=True),
