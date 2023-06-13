@@ -1,4 +1,5 @@
 name: 'mnist'
+img_channels: 1
 args:
     train:
         dataset:

@@ -1,4 +1,5 @@
 name: 'cifar10'
+img_channels: 3
 args:
     train:
         dataset:
