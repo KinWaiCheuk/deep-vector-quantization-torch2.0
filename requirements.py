@@ -5,3 +5,5 @@ pytorch-lightning==2.0.2
 torch==2.0.0+cu118
 torchvision==0.15.1+cu118
 torchaudio==2.0.1
+scipy==1.10.1
+tensorboard==2.13.0
